@@ -34,11 +34,13 @@ jobs:
         run: |
           rm -rf bundle
           mkdir -p bundle/.next
-          cp -R .next/standalone/* bundle/
+          cp -R .next/standalone/. bundle/
           cp -R .next/static bundle/.next/static
           if [ -d public ]; then
             cp -R public bundle/public
           fi
+          test -f bundle/server.js
+          test -f bundle/.next/BUILD_ID
           tar \
             -czf "$ARCHIVE_NAME" \
             -C bundle .
