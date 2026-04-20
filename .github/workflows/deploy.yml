@@ -1,0 +1,122 @@
+name: Deploy to CentOS
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: deploy-rich-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ARCHIVE_NAME: rich-${{ github.run_id }}-${{ github.run_attempt }}.tar.gz
+      DEPLOY_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Build app on GitHub Actions
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create deploy package (standalone)
+        run: |
+          rm -rf bundle
+          mkdir -p bundle/.next
+          cp -R .next/standalone/* bundle/
+          cp -R .next/static bundle/.next/static
+          if [ -d public ]; then
+            cp -R public bundle/public
+          fi
+          tar \
+            -czf "$ARCHIVE_NAME" \
+            -C bundle .
+
+      - name: Upload package to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: ${{ env.ARCHIVE_NAME }}
+          target: "/tmp"
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          QQ_USERNAME: ${{ secrets.QQ_USERNAME }}
+          QQ_PASSWORD: ${{ secrets.QQ_PASSWORD }}
+          ARCHIVE_NAME: ${{ env.ARCHIVE_NAME }}
+          DEPLOY_SHA: ${{ env.DEPLOY_SHA }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          envs: QQ_USERNAME,QQ_PASSWORD,ARCHIVE_NAME,DEPLOY_SHA
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            APP_DIR="$HOME/apps/rich"
+            RELEASES_DIR="$APP_DIR/releases"
+            CURRENT_LINK="$APP_DIR/current"
+            NEW_RELEASE_DIR="$RELEASES_DIR/${DEPLOY_SHA}"
+            ARCHIVE="/tmp/${ARCHIVE_NAME}"
+            LOCK_FILE="$APP_DIR/deploy.lock"
+
+            if ! command -v node >/dev/null 2>&1; then
+              curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+              dnf install -y nodejs
+            fi
+
+            if ! command -v pm2 >/dev/null 2>&1; then
+              npm install -g pm2
+            fi
+
+            mkdir -p "$APP_DIR" "$RELEASES_DIR"
+            exec 9>"$LOCK_FILE"
+            flock -w 600 9
+
+            rm -rf "$NEW_RELEASE_DIR"
+            mkdir -p "$NEW_RELEASE_DIR"
+            tar -xzf "$ARCHIVE" -C "$NEW_RELEASE_DIR"
+
+            cd "$NEW_RELEASE_DIR"
+
+            cat > .env.production <<ENVEOF
+            NODE_ENV=production
+            HOSTNAME=0.0.0.0
+            PORT=3000
+            SMTP_HOST=smtp.qq.com
+            SMTP_PORT=465
+            SMTP_SECURE=true
+            SMTP_USER=${QQ_USERNAME}
+            SMTP_PASS=${QQ_PASSWORD}
+            MAIL_FROM=${QQ_USERNAME}
+            MAIL_TO=${QQ_USERNAME}
+            ENVEOF
+            chmod 600 .env.production
+
+            ln -sfn "$NEW_RELEASE_DIR" "$CURRENT_LINK"
+
+            if pm2 describe rich >/dev/null 2>&1; then
+              pm2 restart rich --update-env
+            else
+              pm2 start server.js --name rich --cwd "$CURRENT_LINK"
+            fi
+
+            pm2 save
+
+            ls -1dt "$RELEASES_DIR"/* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+            rm -f "$ARCHIVE"

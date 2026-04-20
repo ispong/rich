@@ -15,6 +15,13 @@ cp .env.example .env.local
 ```
 
 按你的 SMTP 提供商填写 `.env.local`。
+默认已配置为 QQ 邮箱：
+
+- `SMTP_HOST=smtp.qq.com`
+- `SMTP_PORT=465`
+- `SMTP_SECURE=true`
+- `SMTP_USER` 填你的 QQ 邮箱地址
+- `SMTP_PASS` 填 QQ 邮箱开启 SMTP 后生成的“授权码”（不是登录密码）
 
 ## 3. 启动
 

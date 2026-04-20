@@ -19,10 +19,14 @@ function getRequiredEnv(name: string): string {
 }
 
 function readMailConfig(): MailConfig {
+  const host = process.env.SMTP_HOST?.trim() || "smtp.qq.com";
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
+
   return {
-    host: getRequiredEnv("SMTP_HOST"),
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "true",
+    host,
+    port,
+    secure,
     user: getRequiredEnv("SMTP_USER"),
     pass: getRequiredEnv("SMTP_PASS"),
     from: getRequiredEnv("MAIL_FROM"),
