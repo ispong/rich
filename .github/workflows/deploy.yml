@@ -165,33 +165,33 @@ jobs:
                 -subj "/CN=${HOSTNAME:-localhost}"
             fi
 
-            cat > /etc/nginx/conf.d/rich.conf <<'NGINXEOF'
-            server {
-              listen 80;
-              server_name _;
-              return 301 https://$host$request_uri;
-            }
-
-            server {
-              listen 443 ssl;
-              server_name _;
-
-              ssl_certificate /etc/nginx/certs/rich.crt;
-              ssl_certificate_key /etc/nginx/certs/rich.key;
-              ssl_protocols TLSv1.2 TLSv1.3;
-
-              location / {
-                proxy_pass http://127.0.0.1:3000;
-                proxy_http_version 1.1;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-              }
-            }
-            NGINXEOF
+            printf '%s\n' \
+              'server {' \
+              '  listen 80;' \
+              '  server_name _;' \
+              '  return 301 https://$host$request_uri;' \
+              '}' \
+              '' \
+              'server {' \
+              '  listen 443 ssl;' \
+              '  server_name _;' \
+              '' \
+              '  ssl_certificate /etc/nginx/certs/rich.crt;' \
+              '  ssl_certificate_key /etc/nginx/certs/rich.key;' \
+              '  ssl_protocols TLSv1.2 TLSv1.3;' \
+              '' \
+              '  location / {' \
+              '    proxy_pass http://127.0.0.1:3000;' \
+              '    proxy_http_version 1.1;' \
+              '    proxy_set_header Host $host;' \
+              '    proxy_set_header X-Real-IP $remote_addr;' \
+              '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
+              '    proxy_set_header X-Forwarded-Proto $scheme;' \
+              '    proxy_set_header Upgrade $http_upgrade;' \
+              '    proxy_set_header Connection "upgrade";' \
+              '  }' \
+              '}' \
+              > /etc/nginx/conf.d/rich.conf
 
             if ! nginx -t; then
               echo "nginx config test failed"
