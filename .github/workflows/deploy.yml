@@ -141,8 +141,12 @@ jobs:
               exit 1
             fi
 
+            set -a
+            . "$CURRENT_LINK/.env.production"
+            set +a
+
             pm2 delete rich >/dev/null 2>&1 || true
-            pm2 start server.js --name rich --cwd "$CURRENT_LINK" --update-env
+            pm2 start "$CURRENT_LINK/server.js" --name rich --cwd "$CURRENT_LINK" --update-env
 
             # Validate process is online; print logs for faster diagnosis if it crashes immediately.
             sleep 2
@@ -150,6 +154,13 @@ jobs:
             if [ -z "$PM2_PID" ] || [ "$PM2_PID" = "0" ]; then
               echo "pm2 app 'rich' is not running after start."
               pm2 logs rich --lines 80 --nostream || true
+              exit 1
+            fi
+
+            if ! ss -lntp | grep -q ':3000'; then
+              echo "App is not listening on :3000 after start."
+              pm2 status rich || true
+              pm2 logs rich --lines 120 --nostream || true
               exit 1
             fi
 
