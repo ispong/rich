@@ -16,9 +16,9 @@
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #e6fffa, var(--bg) 40%);
   color: var(--text);
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
+  background: radial-gradient(circle at top, #e6fffa, var(--bg) 40%);
 }
 
 .container {
@@ -109,4 +109,114 @@ button:disabled {
 .status.error {
   color: var(--error);
   background: rgba(185, 28, 28, 0.1);
+}
+
+.unlock-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: radial-gradient(110% 75% at 50% 0%, #64748b 0%, #1e293b 42%, #0f172a 100%);
+}
+
+.unlock-card {
+  width: min(420px, 100%);
+  border-radius: 30px;
+  padding: 28px 20px 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.09));
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(20px);
+  color: #f8fafc;
+  text-align: center;
+}
+
+.unlock-time {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.unlock-title {
+  margin: 16px 0 6px;
+  font-size: 28px;
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.unlock-subtitle {
+  margin: 0;
+  color: rgba(248, 250, 252, 0.8);
+  font-size: 14px;
+}
+
+.unlock-dots {
+  margin: 24px 0 20px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background: transparent;
+}
+
+.dot.filled {
+  background: #f8fafc;
+}
+
+.unlock-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.key {
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  min-height: 62px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.17);
+  backdrop-filter: blur(2px);
+}
+
+.key:hover:enabled {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.key-clear {
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.unlock-error {
+  min-height: 20px;
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #fecaca;
+}
+
+@media (max-width: 420px) {
+  .unlock-card {
+    border-radius: 26px;
+    padding: 24px 16px 20px;
+  }
+
+  .unlock-title {
+    font-size: 24px;
+  }
+
+  .key {
+    min-height: 58px;
+    font-size: 22px;
+  }
 }
