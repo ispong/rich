@@ -173,7 +173,7 @@ jobs:
             }
 
             server {
-              listen 443 ssl http2;
+              listen 443 ssl;
               server_name _;
 
               ssl_certificate /etc/nginx/certs/rich.crt;
@@ -193,9 +193,25 @@ jobs:
             }
             NGINXEOF
 
-            nginx -t
-            systemctl enable --now nginx
-            systemctl restart nginx
+            if ! nginx -t; then
+              echo "nginx config test failed"
+              nginx -T || true
+              exit 1
+            fi
+
+            if ! systemctl enable --now nginx; then
+              echo "failed to enable/start nginx"
+              systemctl status nginx --no-pager -l || true
+              journalctl -u nginx -n 80 --no-pager || true
+              exit 1
+            fi
+
+            if ! systemctl restart nginx; then
+              echo "failed to restart nginx"
+              systemctl status nginx --no-pager -l || true
+              journalctl -u nginx -n 80 --no-pager || true
+              exit 1
+            fi
 
             if command -v firewall-cmd >/dev/null 2>&1; then
               firewall-cmd --permanent --add-service=http || true
