@@ -135,10 +135,22 @@ jobs:
             ln -sfn "$NEW_RELEASE_DIR" "$CURRENT_LINK"
 
             echo "[deploy] restart app"
-            if pm2 describe rich >/dev/null 2>&1; then
-              pm2 restart rich --update-env
-            else
-              pm2 start server.js --name rich --cwd "$CURRENT_LINK"
+            if [ ! -f "$CURRENT_LINK/server.js" ]; then
+              echo "Missing server.js in release: $CURRENT_LINK"
+              ls -la "$CURRENT_LINK" || true
+              exit 1
+            fi
+
+            pm2 delete rich >/dev/null 2>&1 || true
+            pm2 start server.js --name rich --cwd "$CURRENT_LINK" --update-env
+
+            # Validate process is online; print logs for faster diagnosis if it crashes immediately.
+            sleep 2
+            PM2_PID="$(pm2 pid rich || true)"
+            if [ -z "$PM2_PID" ] || [ "$PM2_PID" = "0" ]; then
+              echo "pm2 app 'rich' is not running after start."
+              pm2 logs rich --lines 80 --nostream || true
+              exit 1
             fi
 
             pm2 save
