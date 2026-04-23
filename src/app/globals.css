@@ -123,6 +123,48 @@ button:disabled {
   background: rgba(185, 28, 28, 0.1);
 }
 
+.home-shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+  background: #fff;
+}
+
+.home-send-button {
+  width: min(320px, 100%);
+  min-height: 52px;
+  margin: 0;
+  border: 1px solid #111;
+  border-radius: 12px;
+  background: #fff;
+  color: #111;
+  font-size: 18px;
+  font-weight: 600;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.home-send-button:hover:enabled {
+  background: #111;
+  color: #fff;
+}
+
+.home-send-button:focus,
+.home-send-button:focus-visible,
+.home-send-button:active {
+  border: 1px solid #111;
+  box-shadow: none;
+  outline: none;
+}
+
+.home-send-button:disabled {
+  opacity: 0.6;
+}
+
 .unlock-shell {
   min-height: 100dvh;
   display: flex;
