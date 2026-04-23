@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: "移动端邮件推送测试页面"
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">

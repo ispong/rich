@@ -14,28 +14,36 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   color: var(--text);
   font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", sans-serif;
   background: radial-gradient(circle at top, #e6fffa, var(--bg) 40%);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
 }
 
 .container {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 16px;
+  padding: max(12px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
 }
 
 .card {
   width: 100%;
-  max-width: 480px;
+  max-width: 430px;
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 18px;
+  padding: 18px 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
 }
 
@@ -53,7 +61,7 @@ h1 {
 .form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 label {
@@ -65,6 +73,7 @@ input {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
+  min-height: 48px;
   padding: 12px 14px;
   font-size: 16px;
   outline: none;
@@ -79,11 +88,14 @@ button {
   margin-top: 6px;
   border: 0;
   border-radius: 12px;
+  min-height: 48px;
   padding: 12px 14px;
   font-size: 16px;
   font-weight: 700;
   color: #fff;
   background: linear-gradient(120deg, var(--accent), #0891b2);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:hover:enabled {
@@ -112,42 +124,43 @@ button:disabled {
 }
 
 .unlock-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: radial-gradient(110% 75% at 50% 0%, #64748b 0%, #1e293b 42%, #0f172a 100%);
+  padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+  background: #fff;
 }
 
 .unlock-card {
-  width: min(420px, 100%);
-  border-radius: 30px;
-  padding: 28px 20px 24px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.09));
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  backdrop-filter: blur(20px);
-  color: #f8fafc;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 20px 16px 16px;
+  background: #fff;
+  border: 0;
+  color: #111;
   text-align: center;
 }
 
 .unlock-time {
   margin: 0;
-  font-size: 20px;
-  letter-spacing: 0.06em;
+  font-size: 18px;
+  letter-spacing: 0.02em;
   font-weight: 600;
+  color: #111;
 }
 
 .unlock-title {
   margin: 16px 0 6px;
   font-size: 28px;
-  color: #f8fafc;
+  color: #111;
   font-weight: 600;
 }
 
 .unlock-subtitle {
   margin: 0;
-  color: rgba(248, 250, 252, 0.8);
+  color: #111;
   font-size: 14px;
 }
 
@@ -155,6 +168,7 @@ button:disabled {
   margin: 24px 0 20px;
   display: flex;
   gap: 14px;
+  min-height: 14px;
   align-items: center;
   justify-content: center;
 }
@@ -163,12 +177,12 @@ button:disabled {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
-  background: transparent;
+  border: 1.5px solid #111;
+  background: #fff;
 }
 
 .dot.filled {
-  background: #f8fafc;
+  background: #111;
 }
 
 .unlock-keypad {
@@ -179,18 +193,32 @@ button:disabled {
 
 .key {
   margin: 0;
-  border: 0;
-  border-radius: 999px;
-  min-height: 62px;
-  font-size: 24px;
+  border: 1px solid #111;
+  border-radius: 14px;
+  min-height: 60px;
+  font-size: 22px;
   font-weight: 500;
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.17);
-  backdrop-filter: blur(2px);
+  color: #111;
+  background: #fff;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .key:hover:enabled {
-  background: rgba(255, 255, 255, 0.28);
+  background: #111;
+  color: #fff;
+}
+
+.key:focus,
+.key:focus-visible,
+.key:active {
+  border: 1px solid #111;
+  box-shadow: none;
+  outline: none;
 }
 
 .key-clear {
@@ -202,13 +230,13 @@ button:disabled {
   min-height: 20px;
   margin: 14px 0 0;
   font-size: 13px;
-  color: #fecaca;
+  color: #111;
 }
 
 @media (max-width: 420px) {
   .unlock-card {
-    border-radius: 26px;
-    padding: 24px 16px 20px;
+    border-radius: 14px;
+    padding: 18px 14px 14px;
   }
 
   .unlock-title {

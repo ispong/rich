@@ -3,8 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
-const PASSCODE_LENGTH = 6;
-const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"] as const;
+const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "clear", "0", "submit"] as const;
 
 type UnlockResponse = {
   ok: boolean;
@@ -51,54 +50,61 @@ export default function UnlockPage() {
   }
 
   function pushDigit(digit: string) {
-    if (loading || passcode.length >= PASSCODE_LENGTH) {
+    if (loading) {
       return;
     }
 
-    const nextCode = `${passcode}${digit}`;
-    setPasscode(nextCode);
-
-    if (nextCode.length === PASSCODE_LENGTH) {
-      void submitCode(nextCode);
+    if (error) {
+      setError("");
     }
+    setPasscode((value) => `${value}${digit}`);
   }
 
-  function removeDigit() {
+  function clearPasscode() {
     if (loading || passcode.length === 0) {
       return;
     }
-    setPasscode((value) => value.slice(0, -1));
+    if (error) {
+      setError("");
+    }
+    setPasscode("");
   }
 
   return (
     <main className="unlock-shell">
       <section className="unlock-card">
-        <p className="unlock-time">9:41</p>
-        <h1 className="unlock-title">输入密码</h1>
-        <p className="unlock-subtitle">请输入 6 位访问密码</p>
-
         <div className="unlock-dots" aria-label="passcode dots">
-          {Array.from({ length: PASSCODE_LENGTH }).map((_, index) => (
-            <span key={index} className={`dot ${index < passcode.length ? "filled" : ""}`} />
+          {Array.from({ length: passcode.length }).map((_, index) => (
+            <span key={index} className="dot filled" />
           ))}
         </div>
 
         <div className="unlock-keypad">
-          {KEYS.map((key, index) => {
-            if (key === "") {
-              return <div key={`${key}-${index}`} />;
-            }
-
-            if (key === "del") {
+          {KEYS.map((key) => {
+            if (key === "clear") {
               return (
                 <button
                   key={key}
                   type="button"
                   className="key key-clear"
-                  onClick={removeDigit}
+                  onClick={clearPasscode}
                   disabled={loading || passcode.length === 0}
                 >
-                  删除
+                  清空
+                </button>
+              );
+            }
+
+            if (key === "submit") {
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className="key key-clear"
+                  onClick={() => void submitCode(passcode)}
+                  disabled={loading || passcode.length === 0}
+                >
+                  确定
                 </button>
               );
             }
