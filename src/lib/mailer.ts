@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { fetchFunds, getEstimateChangeRate, type FundInfo } from "@/lib/funds";
 
 type MailConfig = {
   host: string;
@@ -8,15 +9,6 @@ type MailConfig = {
   pass: string;
   from: string;
   fallbackTo: string;
-};
-
-type Csi500Quote = {
-  name: string;
-  code: string;
-  latest: number;
-  change: number;
-  changePercent: number;
-  fetchedAt: string;
 };
 
 function getRequiredEnv(name: string): string {
@@ -43,66 +35,83 @@ function readMailConfig(): MailConfig {
   };
 }
 
-function scaleBy100(value: unknown): number {
-  const numeric = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(numeric)) {
-    throw new Error("Invalid quote number");
+function formatRate(rate: number | null): string {
+  if (rate == null || !Number.isFinite(rate)) {
+    return "--";
   }
-  return numeric / 100;
+
+  const prefix = rate > 0 ? "+" : "";
+  return `${prefix}${rate.toFixed(2)}%`;
 }
 
-async function fetchCsi500Quote(): Promise<Csi500Quote> {
-  const endpoint =
-    "https://push2.eastmoney.com/api/qt/stock/get?secid=1.000905&fields=f57,f58,f43,f169,f170";
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Accept: "application/json"
-    },
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error(`Quote API failed: ${response.status}`);
-  }
-
-  const payload = (await response.json()) as {
-    data?: {
-      f57?: string;
-      f58?: string;
-      f43?: number;
-      f169?: number;
-      f170?: number;
-    };
-  };
-
-  const quote = payload.data;
-  if (!quote?.f57 || !quote?.f58 || quote.f43 == null || quote.f169 == null || quote.f170 == null) {
-    throw new Error("Quote API payload is incomplete");
-  }
-
-  return {
-    name: quote.f58,
-    code: quote.f57,
-    latest: scaleBy100(quote.f43),
-    change: scaleBy100(quote.f169),
-    changePercent: scaleBy100(quote.f170),
-    fetchedAt: new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })
-  };
-}
-
-function buildCsi500MailText(quote: Csi500Quote): string {
-  const sign = quote.change > 0 ? "+" : "";
+function buildFundsMailText(funds: FundInfo[]): string {
   return [
-    "当前中证500指数信息",
+    "当前基金信息",
     "",
-    `指数：${quote.name}（${quote.code}）`,
-    `最新点位：${quote.latest.toFixed(2)}`,
-    `涨跌：${sign}${quote.change.toFixed(2)}`,
-    `涨跌幅：${sign}${quote.changePercent.toFixed(2)}%`,
-    "",
-    `数据时间：${quote.fetchedAt}`
+    ...funds.flatMap((fund) => {
+      const rate = formatRate(getEstimateChangeRate(fund.nav, fund.estimateNav));
+      return [
+        `${fund.name}（${fund.code}）`,
+        `单位净值：${fund.nav}`,
+        `估算净值：${fund.estimateNav}`,
+        `估算涨跌幅：${rate}`,
+        `净值日期：${fund.navDate}`,
+        `更新时间：${fund.estimateTime}`,
+        ""
+      ];
+    })
   ].join("\n");
+}
+
+function buildFundsMailHtml(funds: FundInfo[]): string {
+  const generatedAt = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
+  const rows = funds
+    .map((fund) => {
+      const rate = getEstimateChangeRate(fund.nav, fund.estimateNav);
+      const color = rate != null && rate > 0 ? "#ffffff" : "#111111";
+      const background = rate != null && rate > 0 ? "#111111" : "#ffffff";
+
+      return `
+        <tr>
+          <td style="padding:14px 12px;border-bottom:1px solid #e5e7eb;">
+            <div style="font-size:15px;font-weight:700;color:#111111;">${fund.name}</div>
+            <div style="margin-top:4px;font-size:12px;color:#6b7280;">${fund.code}</div>
+          </td>
+          <td style="padding:14px 12px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111111;">${fund.nav}</td>
+          <td style="padding:14px 12px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111111;">${fund.estimateNav}</td>
+          <td style="padding:14px 12px;border-bottom:1px solid #e5e7eb;">
+            <span style="display:inline-block;padding:6px 10px;border:1px solid #111111;border-radius:999px;background:${background};color:${color};font-size:13px;font-weight:700;">
+              ${formatRate(rate)}
+            </span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `
+    <div style="margin:0;padding:24px;background:#f5f5f5;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#111111;">
+      <div style="max-width:760px;margin:0 auto;background:#ffffff;border:1px solid #111111;border-radius:20px;overflow:hidden;">
+        <div style="padding:24px 20px 14px;border-bottom:1px solid #111111;">
+          <div style="font-size:26px;font-weight:700;letter-spacing:0.01em;">基金信息</div>
+          <div style="margin-top:8px;font-size:13px;color:#6b7280;">生成时间：${generatedAt}</div>
+        </div>
+        <div style="padding:0 12px 16px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="padding:16px 12px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">基金</th>
+                <th style="padding:16px 12px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">单位净值</th>
+                <th style="padding:16px 12px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">估算净值</th>
+                <th style="padding:16px 12px 10px;text-align:left;font-size:12px;color:#6b7280;font-weight:600;">估算涨跌幅</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 export async function sendTestMail(recipient: string | undefined, subject: string | undefined): Promise<void> {
@@ -119,14 +128,16 @@ export async function sendTestMail(recipient: string | undefined, subject: strin
   });
 
   const to = recipient?.trim() || config.fallbackTo;
-  const finalSubject = (subject?.trim() || "当前中证500指数信息").slice(0, 80);
-  const quote = await fetchCsi500Quote();
-  const content = buildCsi500MailText(quote);
+  const finalSubject = (subject?.trim() || "当前基金信息").slice(0, 80);
+  const funds = await fetchFunds();
+  const text = buildFundsMailText(funds);
+  const html = buildFundsMailHtml(funds);
 
   await transporter.sendMail({
     from: config.from,
     to,
     subject: finalSubject,
-    text: content
+    text,
+    html
   });
 }

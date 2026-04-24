@@ -11,6 +11,7 @@ export function middleware(request: NextRequest) {
   const allowList =
     pathname === "/unlock" ||
     pathname.startsWith("/api/unlock") ||
+    pathname.startsWith("/api/funds") ||
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico";
 
